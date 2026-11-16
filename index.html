@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Erica Pertile | Esteticista — Agendamento</title>
+  <!-- Biblioteca oficial leve do Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-page: #F8F7FA;
+      --purple-main: #7C3AED;
+      --purple-bright: #8B5CF6;
+      --purple-light: #EDE9FE;
+      --black-dark: #121117;
+      --text-dark: #121117;
+      --text-light: #FFFFFF;
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-dark);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 16px 100px 16px;
+    }
+
+    /* Cabeçalho */
+    header {
+      text-align: left;
+      margin-bottom: 22px;
+      padding: 8px 4px;
+    }
+
+    .badge-info {
+      display: inline-block;
+      background-color: var(--purple-light);
+      color: var(--purple-main);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 99px;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--black-dark);
+      line-height: 1.15;
+    }
+
+    header p {
+      font-size: 1.05rem;
+      color: #4B4856;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* Cards de Serviços */
+    .services-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .service-card {
+      position: relative;
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 145px;
+      box-shadow: 0 4px 12px rgba(18, 17, 23, 0.08);
+    }
+
+    .service-card:active {
+      transform: scale(0.98);
+    }
+
+    .card-purple {
+      background-color: var(--purple-main);
+      color: var(--text-light);
+    }
+    .card-purple .price-circle {
+      background-color: var(--black-dark);
+      color: var(--text-light);
+    }
+
+    .card-light {
+      background-color: var(--purple-light);
+      color: var(--black-dark);
+    }
+    .card-light .price-circle {
+      background-color: var(--purple-main);
+      color: var(--text-light);
+    }
+
+    .card-dark {
+      background-color: var(--black-dark);
+      color: var(--text-light);
+    }
+    .card-dark .price-circle {
+      background-color: var(--purple-bright);
+      color: var(--text-light);
+    }
+
+    .duration {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      opacity: 0.85;
+      text-transform: uppercase;
+    }
+
+    .service-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      margin: 12px 85px 14px 0;
+      line-height: 1.2;
+    }
+
+    .cta-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .price-circle {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .price-circle .currency {
+      font-size: 0.72rem;
+      line-height: 1;
+    }
+
+    .price-circle .amount {
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+
+    .price-circle .cents {
+      font-size: 0.78rem;
+      vertical-align: super;
+    }
+
+    /* Painel de Agendamento */
+    .booking-section {
+      display: none;
+      background-color: var(--purple-main);
+      color: var(--text-light);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      margin-top: 10px;
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25);
+    }
+
+    .booking-section.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .back-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: var(--text-light);
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 10px 16px;
+      border-radius: 99px;
+      cursor: pointer;
+      margin-bottom: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .booking-section h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .selected-service-box {
+      background-color: #FFFFFF;
+      color: var(--black-dark);
+      padding: 14px 16px;
+      border-radius: 14px;
+      margin: 14px 0 20px 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .step-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 18px 0 10px 0;
+      color: var(--text-light);
+    }
+
+    .step-num {
+      background-color: var(--black-dark);
+      color: var(--text-light);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .option-btn {
+      background-color: #FFFFFF;
+      border: 3px solid transparent;
+      border-radius: 14px;
+      padding: 14px 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--black-dark);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .option-btn.selected {
+      background-color: var(--black-dark);
+      color: #FFFFFF;
+      border-color: #FFFFFF;
+    }
+
+    .option-btn:disabled {
+      opacity: 0.45;
+      text-decoration: line-through;
+      cursor: not-allowed;
+    }
+
+    .input-group {
+      margin-top: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      color: var(--text-light);
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      background-color: #FFFFFF;
+      color: var(--black-dark);
+      font-weight: 600;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--black-dark);
+    }
+
+    .confirm-btn {
+      width: 100%;
+      margin-top: 22px;
+      padding: 18px;
+      border: none;
+      border-radius: 99px;
+      background-color: var(--black-dark);
+      color: #FFFFFF;
+      font-size: 1.15rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(18, 17, 23, 0.3);
+    }
+
+    .confirm-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    /* Tela de Sucesso */
+    .success-card {
+      display: none;
+      background-color: #FFFFFF;
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(18, 17, 23, 0.1);
+    }
+
+    .success-card.active {
+      display: block;
+    }
+
+    .success-icon {
+      font-size: 3.2rem;
+      margin-bottom: 10px;
+    }
+
+    .success-card h2 {
+      font-size: 1.6rem;
+      color: var(--black-dark);
+      margin-bottom: 10px;
+    }
+
+    .success-details {
+      background-color: var(--purple-light);
+      color: var(--black-dark);
+      padding: 16px;
+      border-radius: 14px;
+      margin: 16px 0;
+      text-align: left;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .action-btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 99px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.05rem;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    .btn-whatsapp {
+      background-color: #25D366;
+      color: #0B2B18;
+    }
+
+    .btn-calendar {
+      background-color: var(--purple-main);
+      color: #FFFFFF;
+    }
+
+    .btn-reset {
+      background-color: transparent;
+      border: 2px solid var(--black-dark);
+      color: var(--black-dark);
+      cursor: pointer;
+    }
+
+    .loading-text {
+      grid-column: span 2;
+      text-align: center;
+      padding: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Cabeçalho -->
+    <header id="mainHeader">
+      <span class="badge-info">📅 Atendimento aos Sábados • 09h às 16h</span>
+      <h1>Erica Pertile</h1>
+      <p>Esteticista • Toque no procedimento desejado para agendar seu horário.</p>
+    </header>
+
+    <!-- Lista de Serviços (Passo 1) -->
+    <main id="servicesView" class="services-list"></main>
+
+    <!-- Tela de Escolha de Dia, Horário e Dados (Passo 2 e 3) -->
+    <section id="bookingView" class="booking-section">
+      <button class="back-btn" onclick="voltarParaServicos()">← Voltar aos serviços</button>
+      <h2>Agenda</h2>
+      <p>Escolha o sábado e o horário. Você confirma em poucos toques.</p>
+
+      <div class="selected-service-box">
+        <span id="chosenServiceName">Serviço</span>
+        <span id="chosenServicePrice">R$ 00,00</span>
+      </div>
+
+      <!-- Passo 1: Sábado -->
+      <div class="step-label">
+        <span class="step-num">1</span> Escolha o Sábado
+      </div>
+      <div id="saturdaysGrid" class="options-grid"></div>
+
+      <!-- Passo 2: Horário -->
+      <div class="step-label">
+        <span class="step-num">2</span> Escolha o Horário (1h30)
+      </div>
+      <div id="timesGrid" class="options-grid"></div>
+
+      <!-- Passo 3: Nome e Telefone -->
+      <div class="step-label">
+        <span class="step-num">3</span> Seus Dados
+      </div>
+      <div class="input-group">
+        <label for="clientName">Seu Nome Completo</label>
+        <input type="text" id="clientName" placeholder="Ex: Maria Silva" autocomplete="name" />
+      </div>
+      <div class="input-group">
+        <label for="clientPhone">Seu WhatsApp</label>
+        <input type="tel" id="clientPhone" placeholder="Ex: (11) 99999-9999" autocomplete="tel" />
+      </div>
+
+      <button id="confirmBtn" class="confirm-btn" onclick="finalizarAgendamento()">
+        Confirmar Agendamento ✓
+      </button>
+    </section>
+
+    <!-- Tela de Confirmação Final -->
+    <section id="successView" class="success-card">
+      <div class="success-icon">✅</div>
+      <h2>Horário Reservado!</h2>
+      <p>Seu horário já está salvo na agenda. Toque no botão verde abaixo para avisar a Erica no WhatsApp:</p>
+
+      <div id="summaryBox" class="success-details"></div>
+
+      <a id="whatsappLink" href="#" target="_blank" class="action-btn btn-whatsapp">
+        📲 Avisar no WhatsApp da Erica
+      </a>
+
+      <a id="calendarLink" href="#" target="_blank" class="action-btn btn-calendar">
+        🔔 Salvar Lembrete (1 e 2 dias antes)
+      </a>
+
+      <button onclick="resetarApp()" class="action-btn btn-reset">
+        Fazer outro agendamento
+      </button>
+    </section>
+  </div>
+
+  <script>
+    // ==========================================
+    // CONFIGURAÇÕES DA ERICA
+    // ==========================================
+    // Coloque aqui o WhatsApp dela: 55 + DDD + Número (só dígitos)
+    const WHATSAPP_ERICA = "554198313478";
+
+    // Conexão com o seu banco Supabase
+    const SUPABASE_URL = "https://wuvjambyzkawwhtigfom.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_pUdhkkYjxwImh3LK4KiAWw_5nb7cNlJ";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const SERVICOS = [
+      { id: 1, nome: "Design de Sobrancelha", preco: "25,00", duracao: "1H30", tema: "card-purple" },
+      { id: 2, nome: "Design de Henna", preco: "40,00", duracao: "1H30", tema: "card-light" },
+      { id: 3, nome: "Peeling de Diamante", preco: "59,90", duracao: "1H30", tema: "card-dark" },
+      { id: 4, nome: "Drenagem", preco: "79,90", duracao: "1H30", tema: "card-purple" },
+      { id: 5, nome: "Limpeza de Pele", preco: "99,90", duracao: "1H30", tema: "card-light" },
+      { id: 6, nome: "Microagulhamento", preco: "99,90", duracao: "1H30", tema: "card-dark" },
+      { id: 7, nome: "Brow Lamination", preco: "99,90", duracao: "1H30", tema: "card-purple" },
+      { id: 8, nome: "Lash Lifting", preco: "99,90", duracao: "1H30", tema: "card-light" }
+    ];
+
+    const HORARIOS_SABADO = ["09:00", "10:30", "12:30", "14:00", "15:30"];
+
+    let servicoSelecionado = null;
+    let sabadoSelecionado = null;
+    let horarioSelecionado = null;
+    let agendamentosOcupados = [];
+
+    function carregarServicos() {
+      const container = document.getElementById("servicesView");
+      container.innerHTML = "";
+
+      SERVICOS.forEach(servico => {
+        const [reais, centavos] = servico.preco.split(",");
+        const card = document.createElement("div");
+        card.className = `service-card ${servico.tema}`;
+        card.onclick = () => abrirAgendamento(servico);
+
+        card.innerHTML = `
+          <span class="duration">${servico.duracao}</span>
+          <div class="price-circle">
+            <span class="currency">R$</span>
+            <span class="amount">${reais}<span class="cents">,${centavos}</span></span>
+          </div>
+          <h3 class="service-title">${servico.nome}</h3>
+          <span class="cta-text">Agendar →</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function obterProximosSabados(quantidade = 6) {
+      const sabados = [];
+      const hoje = new Date();
+      let data = new Date(hoje);
+
+      const diasParaSabado = (6 - data.getDay() + 7) % 7;
+      data.setDate(data.getDate() + diasParaSabado);
+
+      for (let i = 0; i < quantidade; i++) {
+        const dia = String(data.getDate()).padStart(2, "0");
+        const mes = String(data.getMonth() + 1).padStart(2, "0");
+        const ano = data.getFullYear();
+
+        sabados.push({
+          iso: `${ano}-${mes}-${dia}`,
+          label: `Sáb, ${dia}/${mes}`
+        });
+
+        data.setDate(data.getDate() + 7);
+      }
+      return sabados;
+    }
+
+    // Busca horários ocupados em tempo real no Supabase
+    async function buscarHorariosOcupados() {
+      const grid = document.getElementById("timesGrid");
+      grid.innerHTML = `<div class="loading-text">Verificando horários livres...</div>`;
+
+      const { data, error } = await db
+        .from("agendamentos")
+        .select("data, hora");
+
+      if (!error && data) {
+        agendamentosOcupados = data;
+      }
+      renderizarHorarios();
+    }
+
+    async function abrirAgendamento(servico) {
+      servicoSelecionado = servico;
+      sabadoSelecionado = null;
+      horarioSelecionado = null;
+
+      document.getElementById("chosenServiceName").innerText = servico.nome;
+      document.getElementById("chosenServicePrice").innerText = `R$ ${servico.preco}`;
+
+      const sabados = obterProximosSabados(6);
+      sabadoSelecionado = sabados[0]; // Já seleciona o próximo sábado por padrão
+
+      renderizarSabados(sabados);
+
+      document.getElementById("servicesView").style.display = "none";
+      document.getElementById("mainHeader").style.display = "none";
+      document.getElementById("bookingView").classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      await buscarHorariosOcupados();
+    }
+
+    function voltarParaServicos() {
+      document.getElementById("bookingView").classList.remove("active");
+      document.getElementById("servicesView").style.display = "flex";
+      document.getElementById("mainHeader").style.display = "block";
+    }
+
+    function renderizarSabados(sabados) {
+      const grid = document.getElementById("saturdaysGrid");
+      grid.innerHTML = "";
+
+      sabados.forEach((sab, index) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn" + (index === 0 ? " selected" : "");
+        btn.innerText = sab.label;
+        btn.onclick = () => {
+          sabadoSelecionado = sab;
+          horarioSelecionado = null;
+          document.querySelectorAll("#saturdaysGrid .option-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          renderizarHorarios();
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    function renderizarHorarios() {
+      const grid = document.getElementById("timesGrid");
+      grid.innerHTML = "";
+
+      HORARIOS_SABADO.forEach(hora => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerText = hora;
+
+        const jaOcupado = sabadoSelecionado && agendamentosOcupados.some(
+          item => item.data === sabadoSelecionado.iso && item.hora === hora
+        );
+
+        if (jaOcupado) {
+          btn.disabled = true;
+          btn.innerText = `${hora} (Ocupado)`;
+        }
+
+        btn.onclick = () => {
+          horarioSelecionado = hora;
+          document.querySelectorAll("#timesGrid .option-btn").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    async function finalizarAgendamento() {
+      const nome = document.getElementById("clientName").value.trim();
+      const telefone = document.getElementById("clientPhone").value.trim();
+      const btnConfirm = document.getElementById("confirmBtn");
+
+      if (!sabadoSelecionado) {
+        alert("Por favor, escolha um sábado.");
+        return;
+      }
+      if (!horarioSelecionado) {
+        alert("Por favor, escolha um horário.");
+        return;
+      }
+      if (!nome || !telefone) {
+        alert("Por favor, preencha seu nome e WhatsApp.");
+        return;
+      }
+
+      btnConfirm.disabled = true;
+      btnConfirm.innerText = "Reservando horário...";
+
+      // Grava no banco de dados online (Supabase)
+      const { error } = await db
+        .from("agendamentos")
+        .insert([{
+          servico: servicoSelecionado.nome,
+          data: sabadoSelecionado.iso,
+          hora: horarioSelecionado,
+          cliente: nome,
+          telefone: telefone
+        }]);
+
+      btnConfirm.disabled = false;
+      btnConfirm.innerText = "Confirmar Agendamento ✓";
+
+      if (error) {
+        if (error.code === "23505") {
+          alert("Ops! Alguém acabou de reservar esse horário agora mesmo. Por favor, escolha outro horário livre.");
+          await buscarHorariosOcupados();
+        } else {
+          alert("Erro ao salvar agendamento. Verifique sua conexão e tente novamente.");
+        }
+        return;
+      }
+
+      // Exibe resumo na tela
+      document.getElementById("summaryBox").innerHTML = `
+        <strong>Cliente:</strong> ${nome}<br>
+        <strong>Procedimento:</strong> ${servicoSelecionado.nome}<br>
+        <strong>Data:</strong> ${sabadoSelecionado.label}<br>
+        <strong>Horário:</strong> ${horarioSelecionado}<br>
+        <strong>Valor:</strong> R$ ${servicoSelecionado.preco}
+      `;
+
+      // Prepara mensagem imediata para o WhatsApp da Erica
+      const textoZap = `Olá Erica! Acabei de agendar pelo site:\n\n` +
+        `👤 *Cliente:* ${nome}\n` +
+        `✨ *Serviço:* ${servicoSelecionado.nome} (R$ ${servicoSelecionado.preco})\n` +
+        `📅 *Data:* ${sabadoSelecionado.label}\n` +
+        `⏰ *Horário:* ${horarioSelecionado}\n` +
+        `📱 *Contato:* ${telefone}`;
+
+      const urlZap = `https://wa.me/${WHATSAPP_ERICA}?text=${encodeURIComponent(textoZap)}`;
+      document.getElementById("whatsappLink").href = urlZap;
+
+      // Link para salvar no Google Agenda com lembrete
+      const dataLimpa = sabadoSelecionado.iso.replace(/-/g, "");
+      const [h, m] = horarioSelecionado.split(":");
+      const totalMin = Number(h) * 60 + Number(m) + 90;
+      const horaFim = String(Math.floor(totalMin / 60)).padStart(2, "0") + String(totalMin % 60).padStart(2, "0");
+      const inicioISO = `${dataLimpa}T${h}${m}00`;
+      const fimISO = `${dataLimpa}T${horaFim}00`;
+
+      const tituloEvento = encodeURIComponent(`${servicoSelecionado.nome} - Erica Pertile`);
+      const detalhesEvento = encodeURIComponent(`Atendimento de estética com Erica Pertile. Cliente: ${nome} (${telefone})`);
+      document.getElementById("calendarLink").href =
+        `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloEvento}&dates=${inicioISO}/${fimISO}&details=${detalhesEvento}`;
+
+      document.getElementById("bookingView").classList.remove("active");
+      document.getElementById("successView").classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetarApp() {
+      document.getElementById("successView").classList.remove("active");
+      document.getElementById("servicesView").style.display = "flex";
+      document.getElementById("mainHeader").style.display = "block";
+    }
+
+    carregarServicos();
+  </script>
+</body>
+</html>
